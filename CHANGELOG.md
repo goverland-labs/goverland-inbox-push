@@ -9,3 +9,4 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - Added skeleton app
+- Basic implementation for push sending
