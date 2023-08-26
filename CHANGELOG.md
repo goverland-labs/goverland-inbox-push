@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.0.2] - 2023-08-26
+
+### Fixed
+- Fixed missed go.sum file in the git
+
 ## [0.0.1] - 2023-07-27
 
 ### Added
