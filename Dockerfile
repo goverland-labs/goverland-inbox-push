@@ -1,5 +1,7 @@
 FROM golang:1.20.3-alpine3.17 AS builder
 
+ARG GITHUB_TOKEN=""
+
 # Setup base software for building app
 RUN apk update && \
     apk add bash ca-certificates git gcc g++ libc-dev binutils file
