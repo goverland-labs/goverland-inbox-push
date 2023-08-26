@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.0.3] - 2023-08-26
+
 ### Fixed
 - Fixed GITHUB_TOKEN argument passing in the Dockerfile
 
