@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.0.4] - 2023-10-06
+
+### Changed
+- Skip sending push on getting token error
+
 ## [0.0.3] - 2023-08-26
 
 ### Fixed
