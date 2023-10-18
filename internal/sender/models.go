@@ -17,4 +17,5 @@ type History struct {
 	UserID       uuid.UUID
 	Message      Message `gorm:"serializer:json"`
 	PushResponse string
+	Hash         string
 }
