@@ -9,6 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - Idempotent key for sending to avoid duplicates in pushes
+- Limiter for 1 push in minute
 
 ## [0.0.4] - 2023-10-06
 

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
@@ -71,6 +72,18 @@ func (s *Service) Send(ctx context.Context, req request) error {
 	}
 	if item != nil {
 		log.Warn().Msgf("duplicate sending push: %s %s", req.userID.String(), req.title)
+
+		return nil
+	}
+
+	last, err := s.repo.GetLastSent(req.userID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("repo.GetLastSent: %w", err)
+	}
+
+	// to avoid spamming
+	if last != nil && time.Since(last.CreatedAt) <= time.Minute {
+		log.Warn().Msgf("sending less than in minute: %s %s %v", req.userID.String(), req.title, time.Since(last.CreatedAt).Seconds())
 
 		return nil
 	}
