@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Decrease log level on getting push token
+
 ## [0.0.5] - 2023-10-19
 
 ### Added

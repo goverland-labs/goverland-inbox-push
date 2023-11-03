@@ -52,7 +52,7 @@ func (c *Consumer) handler() pevents.PushHandler {
 
 		token, err := c.service.GetToken(context.TODO(), payload.UserID)
 		if err != nil {
-			log.Error().Err(err).Msgf("send push for %s", payload.UserID.String())
+			log.Warn().Err(err).Msgf("get token for user %s", payload.UserID.String())
 			return nil
 		}
 
