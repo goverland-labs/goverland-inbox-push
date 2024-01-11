@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	pevents "github.com/goverland-labs/platform-events/events/inbox"
 	client "github.com/goverland-labs/platform-events/pkg/natsclient"
 	"github.com/nats-io/nats.go"
@@ -40,6 +41,19 @@ func NewConsumer(nc *nats.Conn, s *Service) (*Consumer, error) {
 	return c, nil
 }
 
+func (c *Consumer) clickHandler() pevents.PushClickHandler {
+	return func(payload pevents.PushClickPayload) error {
+		var err error
+		defer func(start time.Time) {
+			metricHandleHistogram.
+				WithLabelValues("click_push", metrics.ErrLabelValue(err)).
+				Observe(time.Since(start).Seconds())
+		}(time.Now())
+
+		return c.service.MarkAsClicked(payload.ID)
+	}
+}
+
 // todo: add rate limiter
 func (c *Consumer) handler() pevents.PushHandler {
 	return func(payload pevents.PushPayload) error {
@@ -53,6 +67,26 @@ func (c *Consumer) handler() pevents.PushHandler {
 		token, err := c.service.GetToken(context.TODO(), payload.UserID)
 		if err != nil {
 			log.Warn().Err(err).Msgf("get token for user %s", payload.UserID.String())
+			return nil
+		}
+
+		if payload.Version == pevents.PushVersionV2 {
+			err = c.service.SendCustom(context.TODO(), request{
+				uuid:     uuid.New(),
+				token:    token,
+				body:     payload.Body,
+				title:    payload.Title,
+				imageURL: payload.ImageURL,
+				userID:   payload.UserID,
+				payload:  payload.CustomPayload,
+			})
+			if err != nil {
+				log.Error().
+					Err(err).
+					Str("user_id", payload.UserID.String()).
+					Msg("send custom push")
+			}
+
 			return nil
 		}
 
@@ -82,12 +116,16 @@ func (c *Consumer) Start(ctx context.Context) error {
 		client.WithAckWait(executionTtl),
 	}
 
-	consumer, err := client.NewConsumer(ctx, c.conn, group, pevents.SubjectPushCreated, c.handler(), opts...)
+	created, err := client.NewConsumer(ctx, c.conn, group, pevents.SubjectPushCreated, c.handler(), opts...)
 	if err != nil {
 		return fmt.Errorf("consume for %s/%s: %w", group, pevents.SubjectPushCreated, err)
 	}
+	clicked, err := client.NewConsumer(ctx, c.conn, group, pevents.SubjectPushClicked, c.clickHandler(), opts...)
+	if err != nil {
+		return fmt.Errorf("consume for %s/%s: %w", group, pevents.SubjectPushClicked, err)
+	}
 
-	c.consumers = append(c.consumers, consumer)
+	c.consumers = append(c.consumers, created, clicked)
 
 	log.Info().Msg("sender consumers is started")
 
