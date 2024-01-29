@@ -52,11 +52,13 @@ func (s *Service) GetToken(ctx context.Context, userID uuid.UUID) (string, error
 }
 
 type request struct {
+	uuid     uuid.UUID
 	token    string
 	body     string
 	title    string
 	imageURL string
 	userID   uuid.UUID
+	payload  json.RawMessage
 }
 
 func (r request) hash() string {
@@ -88,17 +90,9 @@ func (s *Service) Send(ctx context.Context, req request) error {
 		return nil
 	}
 
-	authOpt := option.WithCredentialsJSON(s.cfg)
-	fapp, err := firebase.NewApp(context.Background(), &firebase.Config{
-		ProjectID: s.projectID,
-	}, authOpt)
+	client, err := s.makeClient(ctx)
 	if err != nil {
-		return fmt.Errorf("create firebase app: %w", err)
-	}
-
-	client, err := fapp.Messaging(ctx)
-	if err != nil {
-		return fmt.Errorf("create firebase messagign: %w", err)
+		return fmt.Errorf("s.makeClient: %w", err)
 	}
 
 	response, err := client.Send(ctx, &messaging.Message{
@@ -127,4 +121,79 @@ func (s *Service) Send(ctx context.Context, req request) error {
 	}
 
 	return nil
+}
+
+func (s *Service) SendCustom(ctx context.Context, req request) error {
+	client, err := s.makeClient(ctx)
+	if err != nil {
+		return fmt.Errorf("s.makeClient: %w", err)
+	}
+
+	response, err := client.Send(ctx, &messaging.Message{
+		Token: req.token,
+		Data: map[string]string{
+			"foo":     "bar",
+			"payload": string(req.payload),
+		},
+		Notification: &messaging.Notification{
+			Title:    req.title,
+			Body:     req.body,
+			ImageURL: req.imageURL,
+		},
+		APNS: &messaging.APNSConfig{
+			Payload: &messaging.APNSPayload{
+				Aps: &messaging.Aps{
+					MutableContent: true,
+				},
+				CustomData: map[string]interface{}{
+					"payload_as_bytes":  req.payload,
+					"payload_as_string": string(req.payload),
+				},
+			},
+			FCMOptions: &messaging.APNSFCMOptions{
+				ImageURL: req.imageURL,
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("send push: %w", err)
+	}
+
+	if err = s.repo.Create(&History{
+		UserID: req.userID,
+		Message: Message{
+			ID:       req.uuid,
+			Title:    req.title,
+			Body:     req.body,
+			ImageURL: req.token,
+			Payload:  req.payload,
+		},
+		PushResponse: response,
+		Hash:         uuid.NewString(),
+	}); err != nil {
+		log.Error().Err(err).Msg("create history log")
+	}
+
+	return nil
+}
+
+func (s *Service) makeClient(ctx context.Context) (*messaging.Client, error) {
+	authOpt := option.WithCredentialsJSON(s.cfg)
+	fapp, err := firebase.NewApp(context.Background(), &firebase.Config{
+		ProjectID: s.projectID,
+	}, authOpt)
+	if err != nil {
+		return nil, fmt.Errorf("create firebase app: %w", err)
+	}
+
+	client, err := fapp.Messaging(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create firebase messagign: %w", err)
+	}
+
+	return client, nil
+}
+
+func (s *Service) MarkAsClicked(id uuid.UUID) error {
+	return s.repo.MarkAsClicked(id)
 }

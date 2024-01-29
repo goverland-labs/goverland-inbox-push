@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Send notifications v2. Extend message with APNSConfig and Data fields.
+- Add uuid for messages to mark them as read.
+
 ## [0.0.6] - 2023-11-03
 
 ### Changed

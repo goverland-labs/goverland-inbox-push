@@ -1,14 +1,19 @@
 package sender
 
 import (
+	"encoding/json"
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Message struct {
-	Title    string `json:"title"`
-	Body     string `json:"body"`
-	ImageURL string `json:"image_url"`
+	ID       uuid.UUID
+	Title    string          `json:"title"`
+	Body     string          `json:"body"`
+	ImageURL string          `json:"image_url"`
+	Payload  json.RawMessage `json:"payload"`
 }
 
 type History struct {
@@ -18,4 +23,5 @@ type History struct {
 	Message      Message `gorm:"serializer:json"`
 	PushResponse string
 	Hash         string
+	ClickedAt    time.Time
 }

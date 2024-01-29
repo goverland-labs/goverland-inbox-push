@@ -52,3 +52,16 @@ func (r *Repo) GetLastSent(userID uuid.UUID) (*History, error) {
 
 	return &h, nil
 }
+
+func (r *Repo) MarkAsClicked(messageUUID uuid.UUID) error {
+	var (
+		h History
+		_ = h.Message.ID
+		_ = h.ClickedAt
+	)
+
+	return r.conn.Exec(`
+		update histories set clicked_at = now() 
+		where message->>'id' = ?
+	`, messageUUID).Error
+}
