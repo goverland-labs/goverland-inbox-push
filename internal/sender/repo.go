@@ -1,8 +1,12 @@
 package sender
 
 import (
+	"context"
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Repo struct {
@@ -64,4 +68,46 @@ func (r *Repo) MarkAsClicked(messageUUID uuid.UUID) error {
 		update histories set clicked_at = now() 
 		where message->>'id' = ?
 	`, messageUUID).Error
+}
+
+func (r *Repo) QueueByFilters(_ context.Context, filters []Filter) ([]SendQueue, error) {
+	query := r.conn.Model(&SendQueue{})
+	for _, f := range filters {
+		f(query)
+	}
+
+	var list []SendQueue
+	err := query.Find(&list).Error
+
+	return list, err
+}
+
+func (r *Repo) CreateSendQueueRequest(_ context.Context, item *SendQueue) error {
+	return r.conn.
+		Model(&SendQueue{}).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "user_id"},
+				{Name: "dao_id"},
+				{Name: "proposal_id"},
+				{Name: "action"},
+			},
+			DoNothing: true,
+		}).
+		Create(item).
+		Error
+}
+
+func (r *Repo) MarkAsSent(_ context.Context, ids []uint) error {
+	var (
+		dummy SendQueue
+		_     = dummy.ID
+		_     = dummy.SentAt
+	)
+
+	return r.conn.
+		Model(&SendQueue{}).
+		Update("sent_at", time.Now()).
+		Where("id in ?", ids).
+		Error
 }
