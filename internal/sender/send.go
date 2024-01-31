@@ -34,6 +34,13 @@ func (s *Service) sendBatch(ctx context.Context) error {
 		batches[item.UserID] = byUser
 	}
 
+	sent := make([]uint, 0, len(list))
+	defer func(ids []uint) {
+		if err := s.repo.MarkAsSent(context.TODO(), sent); err != nil {
+			log.Error().Err(err).Msg("mark as sent")
+		}
+	}(sent)
+
 	for userID, details := range batches {
 		req, err := s.prepareReq(ctx, userID, details)
 		if err != nil {
@@ -41,6 +48,10 @@ func (s *Service) sendBatch(ctx context.Context) error {
 		}
 		if err := s.SendV2(ctx, req); err != nil {
 			return fmt.Errorf("s.SendV2: %w", err)
+		}
+
+		for _, info := range details {
+			sent = append(sent, info.ID)
 		}
 	}
 
