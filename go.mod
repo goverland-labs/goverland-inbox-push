@@ -7,7 +7,7 @@ require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/goverland-labs/core-web-sdk v0.0.20-0.20240130072420-19251e499a09
+	github.com/goverland-labs/core-web-sdk v0.0.20
 	github.com/goverland-labs/inbox-api v0.0.17
 	github.com/goverland-labs/platform-events v0.1.13
 	github.com/nats-io/nats.go v1.30.2
