@@ -147,7 +147,9 @@ func (s *Service) Send(ctx context.Context, req request) error {
 		Token: req.token,
 	})
 	if err != nil {
-		return fmt.Errorf("send push: %w", err)
+		log.Error().Err(err).Msg("send push")
+
+		return nil
 	}
 
 	if err = s.repo.Create(&History{
@@ -200,7 +202,9 @@ func (s *Service) SendCustom(ctx context.Context, req request) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("send push: %w", err)
+		log.Error().Err(err).Msg("send custom push")
+
+		return nil
 	}
 
 	if err = s.repo.Create(&History{
@@ -268,9 +272,10 @@ func (s *Service) SendV2(ctx context.Context, req request) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("send push: %w", err)
+		return fmt.Errorf("send push v2: %w", err)
 	}
 
+	payload, _ := json.Marshal(req.proposals)
 	if err = s.repo.Create(&History{
 		UserID: req.userID,
 		Message: Message{
@@ -278,7 +283,7 @@ func (s *Service) SendV2(ctx context.Context, req request) error {
 			Title:    req.title,
 			Body:     req.body,
 			ImageURL: req.imageURL,
-			Payload:  req.payload,
+			Payload:  payload,
 		},
 		PushResponse: response,
 		Hash:         req.hash(),

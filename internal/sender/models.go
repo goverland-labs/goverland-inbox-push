@@ -79,7 +79,7 @@ type SendQueue struct {
 	DaoID      uuid.UUID
 	ProposalID string
 	Action     Action
-	SentAt     time.Time
+	SentAt     *time.Time
 }
 
 func (SendQueue) TableName() string {

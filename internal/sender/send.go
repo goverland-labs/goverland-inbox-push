@@ -174,6 +174,12 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 			return fmt.Errorf("s.usrs.GetUserProfile: %w", err)
 		}
 
+		// user do not have an address
+		if usr.GetUser().GetAddress() == "" {
+			sent = append(sent, item.ID)
+			continue
+		}
+
 		res, err := s.core.GetUserVotes(ctx, usr.GetUser().GetAddress(), goverlandcorewebsdk.GetUserVotesRequest{
 			ProposalIDs: []string{item.ProposalID},
 			Limit:       1,
@@ -185,6 +191,7 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 		// user has voted
 		if len(res.Items) != 0 {
 			sent = append(sent, item.ID)
+			continue
 		}
 
 		dd, err := s.getDao(ctx, item.DaoID)
@@ -263,5 +270,5 @@ func (s *Service) getProposal(ctx context.Context, id string) (*proposal.Proposa
 }
 
 func generateDaoIcon(alias string) string {
-	return fmt.Sprintf("https://cdn.stamp.fyi/avatar/%s?s=180", alias, 180)
+	return fmt.Sprintf("https://cdn.stamp.fyi/space/%s?s=%d", alias, 180)
 }

@@ -18,7 +18,7 @@ create table send_queue
     dao_id      text,
     proposal_id text,
     action      text,
-    sent_at     timestamp
+    sent_at     timestamp with time zone
 );
 
 create index idx_send_queue_deleted_at

@@ -99,6 +99,10 @@ func (r *Repo) CreateSendQueueRequest(_ context.Context, item *SendQueue) error 
 }
 
 func (r *Repo) MarkAsSent(_ context.Context, ids []uint) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	var (
 		dummy SendQueue
 		_     = dummy.ID
@@ -107,7 +111,7 @@ func (r *Repo) MarkAsSent(_ context.Context, ids []uint) error {
 
 	return r.conn.
 		Model(&SendQueue{}).
+		Where("id IN ?", ids).
 		Update("sent_at", time.Now()).
-		Where("id in ?", ids).
 		Error
 }
