@@ -42,6 +42,15 @@ func (s *Service) sendBatch(ctx context.Context) error {
 	}(sent)
 
 	for userID, details := range batches {
+		// let's check if we can send a push
+		res, err := s.usrs.AllowSendingPush(ctx, &inboxapi.AllowSendingPushRequest{UserId: userID.String()})
+		if err != nil {
+			return fmt.Errorf("s.usrs.AllowSendingPush: %w", err)
+		}
+		if !res.Allow {
+			continue
+		}
+
 		req, err := s.prepareReq(ctx, userID, details)
 		if err != nil {
 			return fmt.Errorf("s.prepareReq: %w", err)
@@ -120,9 +129,23 @@ func (s *Service) prepareReq(ctx context.Context, userID uuid.UUID, details []Se
 		return req, fmt.Errorf("s.getProposal: %w", err)
 	}
 
+	req.title = fmt.Sprintf("%s: %s", dd.Name, convertActionToTitle(details[0].Action))
 	req.body = pr.Title
 
 	return req, nil
+}
+
+func convertActionToTitle(action Action) string {
+	switch action {
+	case ProposalCreated:
+		return "New proposal created"
+	case ProposalVotingQuorumReached:
+		return "Quorum reached"
+	case ProposalVotingEnded:
+		return "Vote finished"
+	default:
+		return "have update on proposal"
+	}
 }
 
 func (s *Service) sendVotingEndsSoon(ctx context.Context) error {

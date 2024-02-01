@@ -22,7 +22,7 @@ func NewPostmanWorker(s *Service) *PostmanWorker {
 	}
 }
 
-func (w *PostmanWorker) StartBatch(ctx context.Context) error {
+func (w *PostmanWorker) StartRegular(ctx context.Context) error {
 	for {
 		start := time.Now()
 		err := w.service.sendBatch(ctx)

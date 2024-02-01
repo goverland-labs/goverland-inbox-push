@@ -29,7 +29,8 @@ type SubscriptionsFinder interface {
 }
 
 type UsersFinder interface {
-	GetUserProfile(ctx context.Context, req *inboxapi.GetUserProfileRequest) (*inboxapi.UserProfile, error)
+	GetUserProfile(ctx context.Context, req *inboxapi.GetUserProfileRequest, opts ...grpc.CallOption) (*inboxapi.UserProfile, error)
+	AllowSendingPush(ctx context.Context, req *inboxapi.AllowSendingPushRequest, opts ...grpc.CallOption) (*inboxapi.AllowSendingPushResponse, error)
 }
 
 type cacheItem struct {

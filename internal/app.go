@@ -130,7 +130,11 @@ func (a *Application) initServices() error {
 		return fmt.Errorf("sender consumer: %w", err)
 	}
 
+	postman := sender.NewPostmanWorker(service)
+
 	a.manager.AddWorker(process.NewCallbackWorker("sender-consumer", dc.Start))
+	a.manager.AddWorker(process.NewCallbackWorker("postman-immediately", postman.StartImmediately))
+	a.manager.AddWorker(process.NewCallbackWorker("postman-regular", postman.StartRegular))
 
 	return nil
 }
