@@ -20,16 +20,38 @@ const (
 	ProposalVotingEnded         Action = "proposal.voting.ended"
 )
 
+const (
+	templateIDVoteFinishesSoon  templateID = 1
+	templateIDOneDaoOneProposal templateID = 2
+	templateIDOneDaoFewProposal templateID = 3
+	templateIDTwoDao            templateID = 4
+	templateIDFewDao            templateID = 5
+)
+
 type Type string
 
 type Action string
 
+type templateID int
+
+type request struct {
+	token     string
+	body      string
+	title     string
+	imageURL  string
+	userID    uuid.UUID
+	payload   json.RawMessage
+	proposals []string
+	template  templateID
+}
+
 type Message struct {
-	ID       uuid.UUID
-	Title    string          `json:"title"`
-	Body     string          `json:"body"`
-	ImageURL string          `json:"image_url"`
-	Payload  json.RawMessage `json:"payload"`
+	ID         uuid.UUID
+	Title      string          `json:"title"`
+	Body       string          `json:"body"`
+	ImageURL   string          `json:"image_url"`
+	Payload    json.RawMessage `json:"payload"`
+	TemplateID templateID      `json:"template_id"`
 }
 
 type History struct {

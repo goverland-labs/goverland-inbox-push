@@ -91,6 +91,7 @@ func (s *Service) prepareReq(ctx context.Context, userID uuid.UUID, details []Se
 
 	if len(daos) >= 2 {
 		req.title = "Goverland"
+		req.template = templateIDFewDao
 
 		maxCnt := 2
 		names := make([]string, maxCnt)
@@ -105,6 +106,7 @@ func (s *Service) prepareReq(ctx context.Context, userID uuid.UUID, details []Se
 		if len(daos) > 2 {
 			req.body = fmt.Sprintf("%s, %s, and more have updates on proposals.", names[0], names[1])
 		} else {
+			req.template = templateIDTwoDao
 			req.body = fmt.Sprintf("%s and %s have updates on proposals.", names[0], names[1])
 		}
 
@@ -118,6 +120,7 @@ func (s *Service) prepareReq(ctx context.Context, userID uuid.UUID, details []Se
 	req.imageURL = generateDaoIcon(dd.Alias)
 
 	if len(proposals) > 1 {
+		req.template = templateIDOneDaoFewProposal
 		req.title = dd.Name
 		req.body = fmt.Sprintf("Updates on %d proposals", len(proposals))
 
@@ -131,6 +134,7 @@ func (s *Service) prepareReq(ctx context.Context, userID uuid.UUID, details []Se
 
 	req.title = fmt.Sprintf("%s: %s", dd.Name, convertActionToTitle(details[0].Action))
 	req.body = pr.Title
+	req.template = templateIDOneDaoOneProposal
 
 	return req, nil
 }
@@ -210,6 +214,7 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 			imageURL:  generateDaoIcon(dd.Alias),
 			userID:    item.UserID,
 			proposals: []string{item.ProposalID},
+			template:  templateIDVoteFinishesSoon,
 		})
 		if err != nil {
 			return fmt.Errorf("s.SendV2: %w", err)

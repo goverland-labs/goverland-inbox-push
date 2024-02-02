@@ -86,16 +86,6 @@ func (s *Service) GetToken(ctx context.Context, userID uuid.UUID) (string, error
 	return response.GetToken(), nil
 }
 
-type request struct {
-	token     string
-	body      string
-	title     string
-	imageURL  string
-	userID    uuid.UUID
-	payload   json.RawMessage
-	proposals []string
-}
-
 func (r request) hash() string {
 	summary := fmt.Sprintf(
 		"%s_%s_%s_%s_%s",
@@ -279,11 +269,12 @@ func (s *Service) SendV2(ctx context.Context, req request) error {
 	if err = s.repo.Create(&History{
 		UserID: req.userID,
 		Message: Message{
-			ID:       msgID,
-			Title:    req.title,
-			Body:     req.body,
-			ImageURL: req.imageURL,
-			Payload:  payload,
+			ID:         msgID,
+			Title:      req.title,
+			Body:       req.body,
+			ImageURL:   req.imageURL,
+			Payload:    payload,
+			TemplateID: req.template,
 		},
 		PushResponse: response,
 		Hash:         req.hash(),
