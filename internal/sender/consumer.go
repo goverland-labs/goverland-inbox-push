@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	pevents "github.com/goverland-labs/platform-events/events/inbox"
 	client "github.com/goverland-labs/platform-events/pkg/natsclient"
 	"github.com/nats-io/nats.go"
@@ -72,7 +71,6 @@ func (c *Consumer) handler() pevents.PushHandler {
 
 		if payload.Version == pevents.PushVersionV2 {
 			err = c.service.SendCustom(context.TODO(), request{
-				uuid:     uuid.New(),
 				token:    token,
 				body:     payload.Body,
 				title:    payload.Title,
@@ -124,8 +122,12 @@ func (c *Consumer) Start(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("consume for %s/%s: %w", group, pevents.SubjectPushClicked, err)
 	}
+	feed, err := client.NewConsumer(ctx, c.conn, group, pevents.SubjectFeedUpdated, c.handleFeed(), opts...)
+	if err != nil {
+		return fmt.Errorf("consume for %s/%s: %w", group, pevents.SubjectFeedUpdated, err)
+	}
 
-	c.consumers = append(c.consumers, created, clicked)
+	c.consumers = append(c.consumers, created, clicked, feed)
 
 	log.Info().Msg("sender consumers is started")
 

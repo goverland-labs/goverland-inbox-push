@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	coresdk "github.com/goverland-labs/core-web-sdk"
 	"github.com/goverland-labs/inbox-api/protobuf/inboxapi"
 	"github.com/nats-io/nats.go"
 	"github.com/s-larionov/process-manager"
@@ -114,9 +115,12 @@ func (a *Application) initServices() error {
 	}
 
 	client := inboxapi.NewSettingsClient(conn)
+	subs := inboxapi.NewSubscriptionClient(conn)
+	usrs := inboxapi.NewUserClient(conn)
+	coreSDK := coresdk.NewClient(a.cfg.Core.CoreURL)
 
 	repo := sender.NewRepo(a.db)
-	service, err := sender.NewService(repo, a.cfg.Push, client)
+	service, err := sender.NewService(repo, a.cfg.Push, client, subs, usrs, coreSDK)
 	if err != nil {
 		return err
 	}
@@ -126,7 +130,11 @@ func (a *Application) initServices() error {
 		return fmt.Errorf("sender consumer: %w", err)
 	}
 
+	postman := sender.NewPostmanWorker(service)
+
 	a.manager.AddWorker(process.NewCallbackWorker("sender-consumer", dc.Start))
+	a.manager.AddWorker(process.NewCallbackWorker("postman-immediately", postman.StartImmediately))
+	a.manager.AddWorker(process.NewCallbackWorker("postman-regular", postman.StartRegular))
 
 	return nil
 }

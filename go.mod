@@ -7,11 +7,12 @@ require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/goverland-labs/inbox-api v0.0.11
+	github.com/goverland-labs/core-web-sdk v0.0.20
+	github.com/goverland-labs/inbox-api v0.0.17
 	github.com/goverland-labs/platform-events v0.1.13
 	github.com/nats-io/nats.go v1.30.2
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rs/zerolog v1.29.0
+	github.com/rs/zerolog v1.29.1
 	github.com/s-larionov/process-manager v0.0.1
 	github.com/shopspring/decimal v1.3.1
 	google.golang.org/api v0.114.0

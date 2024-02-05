@@ -8,4 +8,5 @@ type App struct {
 	Push        Push
 	DB          DB
 	InternalAPI API
+	Core        Core
 }
