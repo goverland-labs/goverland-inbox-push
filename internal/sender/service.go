@@ -165,12 +165,9 @@ func (s *Service) SendCustom(ctx context.Context, req request) error {
 		return fmt.Errorf("s.makeClient: %w", err)
 	}
 
+	msgID := uuid.New()
 	response, err := client.Send(ctx, &messaging.Message{
 		Token: req.token,
-		Data: map[string]string{
-			"foo":     "bar",
-			"payload": string(req.payload),
-		},
 		Notification: &messaging.Notification{
 			Title:    req.title,
 			Body:     req.body,
@@ -182,8 +179,8 @@ func (s *Service) SendCustom(ctx context.Context, req request) error {
 					MutableContent: true,
 				},
 				CustomData: map[string]interface{}{
-					"payload_as_bytes":  req.payload,
-					"payload_as_string": string(req.payload),
+					"id":        msgID,
+					"proposals": req.payload,
 				},
 			},
 			FCMOptions: &messaging.APNSFCMOptions{
@@ -200,7 +197,7 @@ func (s *Service) SendCustom(ctx context.Context, req request) error {
 	if err = s.repo.Create(&History{
 		UserID: req.userID,
 		Message: Message{
-			ID:       uuid.New(),
+			ID:       msgID,
 			Title:    req.title,
 			Body:     req.body,
 			ImageURL: req.token,
