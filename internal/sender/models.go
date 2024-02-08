@@ -46,7 +46,7 @@ type request struct {
 }
 
 type Message struct {
-	ID         uuid.UUID
+	ID         uuid.UUID       `json:"id"`
 	Title      string          `json:"title"`
 	Body       string          `json:"body"`
 	ImageURL   string          `json:"image_url"`
