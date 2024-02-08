@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.0.10] - 2024-02-08
+
+### Changed
+- Fix message id marshaling
+
 ## [0.0.8] - 2024-02-05
 
 ### Added
