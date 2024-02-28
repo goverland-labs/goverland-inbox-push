@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Update platform events library to collect nats metrics
+
 ## [0.0.10] - 2024-02-08
 
 ### Changed
