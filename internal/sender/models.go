@@ -61,7 +61,7 @@ type History struct {
 	Message      Message `gorm:"serializer:json"`
 	PushResponse string
 	Hash         string
-	ClickedAt    time.Time
+	ClickedAt    *time.Time
 }
 
 type Item struct {
