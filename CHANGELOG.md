@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.0.12] - 2024-03-19
+
 ### Changed 
 - Update history schema to store null clicked_at instead of 0000-00-00
 
