@@ -56,6 +56,8 @@ func (s *Service) ProcessFeedItem(ctx context.Context, item Item) error {
 		if err != nil {
 			return fmt.Errorf("s.repo.CreateSendQueueRequest: %w", err)
 		}
+
+		collectStats("queue", "add", err)
 	}
 
 	return nil

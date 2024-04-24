@@ -59,6 +59,8 @@ func (s *Service) sendBatch(ctx context.Context) error {
 			return fmt.Errorf("s.SendV2: %w", err)
 		}
 
+		collectStats("send", "batch", err)
+
 		for _, info := range details {
 			sent = append(sent, info.ID)
 		}
@@ -219,6 +221,8 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("s.SendV2: %w", err)
 		}
+
+		collectStats("send", "voting_ends_soon", err)
 
 		sent = append(sent, item.ID)
 	}
