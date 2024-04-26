@@ -259,7 +259,11 @@ func (s *Service) SendV2(ctx context.Context, req request) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("send push v2: %w", err)
+		log.Error().
+			Err(err).
+			Msg("send push by external client")
+
+		return nil
 	}
 
 	payload, _ := json.Marshal(req.proposals)

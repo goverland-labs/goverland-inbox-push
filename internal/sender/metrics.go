@@ -16,3 +16,18 @@ var metricHandleHistogram = promauto.NewHistogramVec(
 		Buckets:   []float64{.001, .005, .01, .025, .05, .1, .5, 1, 2.5, 5, 10},
 	}, []string{"type", "error"},
 )
+
+var metricPushCounter = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.Namespace,
+		Subsystem: "sender",
+		Name:      "stats",
+		Help:      "Some stats counters by system",
+	}, []string{"subject", "method", "error"},
+)
+
+func collectStats(subject, method string, err error) {
+	metricPushCounter.
+		WithLabelValues(subject, method, metrics.ErrLabelValue(err)).
+		Inc()
+}

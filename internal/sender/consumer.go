@@ -49,7 +49,11 @@ func (c *Consumer) clickHandler() pevents.PushClickHandler {
 				Observe(time.Since(start).Seconds())
 		}(time.Now())
 
-		return c.service.MarkAsClicked(payload.ID)
+		err = c.service.MarkAsClicked(payload.ID)
+
+		collectStats("mark", "clicked", err)
+
+		return err
 	}
 }
 

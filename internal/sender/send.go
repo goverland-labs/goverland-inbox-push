@@ -11,6 +11,8 @@ import (
 	"github.com/goverland-labs/core-web-sdk/proposal"
 	"github.com/goverland-labs/inbox-api/protobuf/inboxapi"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *Service) sendBatch(ctx context.Context) error {
@@ -58,6 +60,8 @@ func (s *Service) sendBatch(ctx context.Context) error {
 		if err := s.SendV2(ctx, req); err != nil {
 			return fmt.Errorf("s.SendV2: %w", err)
 		}
+
+		collectStats("send", "batch", err)
 
 		for _, info := range details {
 			sent = append(sent, info.ID)
@@ -174,6 +178,12 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 
 	for _, item := range list {
 		usr, err := s.usrs.GetUserProfile(ctx, &inboxapi.GetUserProfileRequest{UserId: item.UserID.String()})
+		if status.Code(err) == codes.NotFound {
+			// todo: think about adding another field/status for skipped messages
+			sent = append(sent, item.ID)
+			continue
+		}
+
 		if err != nil {
 			return fmt.Errorf("s.usrs.GetUserProfile: %w", err)
 		}
@@ -219,6 +229,8 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("s.SendV2: %w", err)
 		}
+
+		collectStats("send", "voting_ends_soon", err)
 
 		sent = append(sent, item.ID)
 	}
