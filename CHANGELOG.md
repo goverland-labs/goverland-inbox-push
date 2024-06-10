@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Send pushes for all user devices
+
 ## [0.0.13] - 2024-03-26
 
 ### Added

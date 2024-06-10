@@ -86,10 +86,28 @@ func (s *Service) GetToken(ctx context.Context, userID uuid.UUID) (string, error
 	return response.GetToken(), nil
 }
 
+func (s *Service) GetTokens(ctx context.Context, userID uuid.UUID) ([]TokenDetails, error) {
+	response, err := s.client.GetPushTokenList(ctx, &inboxapi.GetPushTokenListRequest{UserId: userID.String()})
+	if err != nil {
+		return nil, fmt.Errorf("get push tokens by user_id: %s: %w", userID, err)
+	}
+
+	tokens := make([]TokenDetails, 0, len(response.GetTokens()))
+	for _, info := range response.GetTokens() {
+		tokens = append(tokens, TokenDetails{
+			Token:      info.GetToken(),
+			DeviceUUID: info.GetDeviceUuid(),
+		})
+	}
+
+	return tokens, nil
+}
+
 func (r request) hash() string {
 	summary := fmt.Sprintf(
-		"%s_%s_%s_%s_%s",
+		"%s_%s_%s_%s_%s_%s",
 		r.userID.String(),
+		r.deviceUUID,
 		r.title,
 		r.body,
 		r.imageURL,
@@ -213,19 +231,9 @@ func (s *Service) SendCustom(ctx context.Context, req request) error {
 }
 
 func (s *Service) SendV2(ctx context.Context, req request) error {
-	token, err := s.GetToken(context.TODO(), req.userID)
+	list, err := s.GetTokens(context.TODO(), req.userID)
 	if err != nil {
 		log.Warn().Err(err).Msgf("get token for user %s", req.userID.String())
-
-		return nil
-	}
-
-	item, err := s.repo.GetByHash(req.hash())
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("getByHash: %w", err)
-	}
-	if item != nil {
-		log.Warn().Msgf("duplicate sending push: %s %s", req.userID.String(), req.title)
 
 		return nil
 	}
@@ -236,51 +244,65 @@ func (s *Service) SendV2(ctx context.Context, req request) error {
 	}
 
 	msgID := uuid.New()
-	response, err := client.Send(ctx, &messaging.Message{
-		Token: token,
-		Notification: &messaging.Notification{
-			Title:    req.title,
-			Body:     req.body,
-			ImageURL: req.imageURL,
-		},
-		APNS: &messaging.APNSConfig{
-			Payload: &messaging.APNSPayload{
-				Aps: &messaging.Aps{
-					MutableContent: true,
-				},
-				CustomData: map[string]interface{}{
-					"id":        msgID,
-					"proposals": req.proposals,
-				},
-			},
-			FCMOptions: &messaging.APNSFCMOptions{
+	for _, info := range list {
+		req.deviceUUID = info.DeviceUUID
+		item, err := s.repo.GetByHash(req.hash())
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("getByHash: %w", err)
+		}
+		if item != nil {
+			log.Warn().Msgf("duplicate sending push: %s %s", req.userID.String(), req.title)
+
+			continue
+		}
+
+		response, err := client.Send(ctx, &messaging.Message{
+			Token: info.Token,
+			Notification: &messaging.Notification{
+				Title:    req.title,
+				Body:     req.body,
 				ImageURL: req.imageURL,
 			},
-		},
-	})
-	if err != nil {
-		log.Error().
-			Err(err).
-			Msg("send push by external client")
+			APNS: &messaging.APNSConfig{
+				Payload: &messaging.APNSPayload{
+					Aps: &messaging.Aps{
+						MutableContent: true,
+					},
+					CustomData: map[string]interface{}{
+						"id":        msgID,
+						"proposals": req.proposals,
+					},
+				},
+				FCMOptions: &messaging.APNSFCMOptions{
+					ImageURL: req.imageURL,
+				},
+			},
+		})
+		if err != nil {
+			log.Error().
+				Err(err).
+				Msg("send push by external client")
 
-		return nil
-	}
+			return nil
+		}
 
-	payload, _ := json.Marshal(req.proposals)
-	if err = s.repo.Create(&History{
-		UserID: req.userID,
-		Message: Message{
-			ID:         msgID,
-			Title:      req.title,
-			Body:       req.body,
-			ImageURL:   req.imageURL,
-			Payload:    payload,
-			TemplateID: req.template,
-		},
-		PushResponse: response,
-		Hash:         req.hash(),
-	}); err != nil {
-		log.Error().Err(err).Msg("create history log")
+		payload, _ := json.Marshal(req.proposals)
+		if err = s.repo.Create(&History{
+			UserID: req.userID,
+			Message: Message{
+				ID:         msgID,
+				Title:      req.title,
+				Body:       req.body,
+				ImageURL:   req.imageURL,
+				Payload:    payload,
+				TemplateID: req.template,
+				DeviceUUID: info.DeviceUUID,
+			},
+			PushResponse: response,
+			Hash:         req.hash(),
+		}); err != nil {
+			log.Error().Err(err).Msg("create history log")
+		}
 	}
 
 	return nil

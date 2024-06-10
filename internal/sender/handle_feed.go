@@ -42,8 +42,7 @@ func (s *Service) ProcessFeedItem(ctx context.Context, item Item) error {
 		}
 
 		// check that the user has allowed to receive push notifications
-		_, err = s.GetToken(ctx, subscriberID)
-		if err != nil {
+		if list, err := s.GetTokens(ctx, subscriberID); err != nil || len(list) == 0 {
 			return nil
 		}
 
