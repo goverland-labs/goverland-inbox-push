@@ -35,14 +35,15 @@ type Action string
 type templateID int
 
 type request struct {
-	token     string
-	body      string
-	title     string
-	imageURL  string
-	userID    uuid.UUID
-	payload   json.RawMessage
-	proposals []string
-	template  templateID
+	token      string
+	body       string
+	title      string
+	imageURL   string
+	userID     uuid.UUID
+	deviceUUID string
+	payload    json.RawMessage
+	proposals  []string
+	template   templateID
 }
 
 type Message struct {
@@ -52,6 +53,7 @@ type Message struct {
 	ImageURL   string          `json:"image_url"`
 	Payload    json.RawMessage `json:"payload"`
 	TemplateID templateID      `json:"template_id"`
+	DeviceUUID string          `json:"device_uuid"`
 }
 
 type History struct {
@@ -106,4 +108,9 @@ type SendQueue struct {
 
 func (SendQueue) TableName() string {
 	return "send_queue"
+}
+
+type TokenDetails struct {
+	Token      string
+	DeviceUUID string
 }
