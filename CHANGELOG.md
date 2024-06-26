@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Use push settings details to avoid sending irrelevant notifications
+
 ## [0.1.0] - 2024-07-30
 
 ### Changed
