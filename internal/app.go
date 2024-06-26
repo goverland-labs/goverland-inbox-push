@@ -117,10 +117,11 @@ func (a *Application) initServices() error {
 	client := inboxapi.NewSettingsClient(conn)
 	subs := inboxapi.NewSubscriptionClient(conn)
 	usrs := inboxapi.NewUserClient(conn)
+	sp := inboxapi.NewSettingsClient(conn)
 	coreSDK := coresdk.NewClient(a.cfg.Core.CoreURL)
 
 	repo := sender.NewRepo(a.db)
-	service, err := sender.NewService(repo, a.cfg.Push, client, subs, usrs, coreSDK)
+	service, err := sender.NewService(repo, a.cfg.Push, client, subs, usrs, sp, coreSDK)
 	if err != nil {
 		return err
 	}

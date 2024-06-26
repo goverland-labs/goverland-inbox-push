@@ -53,7 +53,28 @@ func (s *Service) sendBatch(ctx context.Context) error {
 			continue
 		}
 
-		req, err := s.prepareReq(ctx, userID, details)
+		allowedActions, err := s.getAllowedSendActions(userID)
+		if err != nil {
+			return fmt.Errorf("s.getAllowedSendActions: %w", err)
+		}
+
+		// filter only supported actions by user cfg
+		supported := make([]SendQueue, 0, len(details))
+		for _, info := range details {
+			if !allowedActions.Contains(info.Action) {
+				sent = append(sent, info.ID)
+				continue
+			}
+
+			supported = append(supported, info)
+		}
+
+		// if no supported, do not send anything
+		if len(supported) == 0 {
+			continue
+		}
+
+		req, err := s.prepareReq(ctx, userID, supported)
 		if err != nil {
 			return fmt.Errorf("s.prepareReq: %w", err)
 		}
@@ -236,6 +257,37 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Service) getAllowedSendActions(userID uuid.UUID) (Actions, error) {
+	result := make(Actions, 0, 10)
+	details, err := s.settings.GetPushDetails(context.Background(), &inboxapi.GetPushDetailsRequest{UserId: userID.String()})
+	if err != nil {
+		return nil, fmt.Errorf("s.settings.GetPushDetails: %w", err)
+	}
+
+	daoSettings := details.GetDao()
+	if daoSettings == nil {
+		return result, nil
+	}
+
+	if daoSettings.GetVoteFinished() {
+		result = append(result, ProposalVotingEnded)
+	}
+
+	if daoSettings.GetVoteFinishesSoon() {
+		result = append(result, ProposalVotingEndsSoon)
+	}
+
+	if daoSettings.GetQuorumReached() {
+		result = append(result, ProposalVotingQuorumReached)
+	}
+
+	if daoSettings.GetNewProposalCreated() {
+		result = append(result, ProposalCreated)
+	}
+
+	return result, nil
 }
 
 // todo: refactor it
