@@ -69,6 +69,8 @@ func (s *Service) ProcessFeedItem(ctx context.Context, item Item) error {
 			return fmt.Errorf("s.repo.CreateSendQueueRequest: %w", err)
 		}
 
+		log.Info().Msgf("proposal %s processed for %d subscriber", item.ProposalID, subscriberID.String())
+
 		collectStats("queue", "add", err)
 	}
 
