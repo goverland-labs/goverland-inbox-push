@@ -14,10 +14,17 @@ func (c *Consumer) handleFeed() inbox.FeedHandler {
 	return func(payload inbox.FeedPayload) error {
 		converted := convertPayloadToInternal(payload)
 
+		log.Info().Msgf("start processing proposal %s with action %s", converted.ProposalID, converted.Action)
+
 		if err := c.service.ProcessFeedItem(context.TODO(), converted); err != nil {
-			log.Error().Err(err).Msgf("process item: %s", converted.ProposalID)
+			log.Error().
+				Err(err).
+				Msgf("process proposal %s with action %s", converted.ProposalID, converted.Action)
+
 			return err
 		}
+
+		log.Info().Msgf("processed proposal %s with action %s", converted.ProposalID, converted.Action)
 
 		return nil
 	}
@@ -25,6 +32,8 @@ func (c *Consumer) handleFeed() inbox.FeedHandler {
 
 func (s *Service) ProcessFeedItem(ctx context.Context, item Item) error {
 	if !item.AllowSending() {
+		log.Info().Msgf("skip processing due to invalid type/action: %s with action %s", item.ProposalID, item.Action)
+
 		return nil
 	}
 
@@ -32,8 +41,10 @@ func (s *Service) ProcessFeedItem(ctx context.Context, item Item) error {
 		DaoId: item.DaoID.String(),
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("find subscribers by dao id %s: %w", item.DaoID.String(), err)
 	}
+
+	log.Info().Msgf("for dao %s founded %d subscribers", item.DaoID.String(), len(resp.Users))
 
 	for _, sub := range resp.Users {
 		subscriberID, err := uuid.Parse(sub.GetUserId())
@@ -43,6 +54,8 @@ func (s *Service) ProcessFeedItem(ctx context.Context, item Item) error {
 
 		// check that the user has allowed to receive push notifications
 		if list, err := s.GetTokens(ctx, subscriberID); err != nil || len(list) == 0 {
+			log.Info().Msgf("skip processing %s to user %s due to missing tokens", item.ProposalID, subscriberID.String())
+
 			return nil
 		}
 
