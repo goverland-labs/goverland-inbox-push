@@ -37,19 +37,23 @@ func (s *Service) sendBatch(ctx context.Context) error {
 	}
 
 	sent := make([]uint, 0, len(list))
-	defer func(ids []uint) {
+	defer func() {
+		log.Info().Msgf("marking as sent ids: %v", sent)
+
 		if err := s.repo.MarkAsSent(context.TODO(), sent); err != nil {
 			log.Error().Err(err).Msg("mark as sent")
 		}
-	}(sent)
+	}()
 
 	for userID, details := range batches {
-		// let's check if we can send a push
+		//let's check if we can send a push
 		res, err := s.usrs.AllowSendingPush(ctx, &inboxapi.AllowSendingPushRequest{UserId: userID.String()})
 		if err != nil {
 			return fmt.Errorf("s.usrs.AllowSendingPush: %w", err)
 		}
 		if !res.Allow {
+			log.Info().Msgf("user is not allow to recieve push: %s", userID.String())
+
 			continue
 		}
 
@@ -57,6 +61,8 @@ func (s *Service) sendBatch(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("s.getAllowedSendActions: %w", err)
 		}
+
+		log.Info().Msgf("user %s allowed actions: %v", userID.String(), allowedActions)
 
 		// filter only supported actions by user cfg
 		supported := make([]SendQueue, 0, len(details))
@@ -68,6 +74,8 @@ func (s *Service) sendBatch(ctx context.Context) error {
 
 			supported = append(supported, info)
 		}
+
+		log.Info().Msgf("user %s supported to recieve: %v", userID.String(), supported)
 
 		// if no supported, do not send anything
 		if len(supported) == 0 {
