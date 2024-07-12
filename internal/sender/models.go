@@ -42,13 +42,11 @@ func (l Actions) Contains(action Action) bool {
 type templateID int
 
 type request struct {
-	token      string
 	body       string
 	title      string
 	imageURL   string
 	userID     uuid.UUID
 	deviceUUID string
-	payload    json.RawMessage
 	proposals  []string
 	template   templateID
 }

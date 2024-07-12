@@ -86,8 +86,8 @@ func (s *Service) sendBatch(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("s.prepareReq: %w", err)
 		}
-		if err := s.SendV2(ctx, req); err != nil {
-			return fmt.Errorf("s.SendV2: %w", err)
+		if err := s.Send(ctx, req); err != nil {
+			return fmt.Errorf("s.Send: %w", err)
 		}
 
 		collectStats("send", "batch", err)
@@ -247,7 +247,7 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 			return fmt.Errorf("s.getProposal: %w", err)
 		}
 
-		err = s.SendV2(ctx, request{
+		err = s.Send(ctx, request{
 			title:     fmt.Sprintf("%s: Vote finishes soon", dd.Name),
 			body:      pr.Title,
 			imageURL:  generateDaoIcon(dd.Alias),
@@ -256,7 +256,7 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 			template:  templateIDVoteFinishesSoon,
 		})
 		if err != nil {
-			return fmt.Errorf("s.SendV2: %w", err)
+			return fmt.Errorf("s.Send: %w", err)
 		}
 
 		collectStats("send", "voting_ends_soon", err)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	pevents "github.com/goverland-labs/goverland-platform-events/events/inbox"
 	client "github.com/goverland-labs/goverland-platform-events/pkg/natsclient"
 	"github.com/nats-io/nats.go"
@@ -20,13 +21,18 @@ const (
 	executionTtl       = time.Minute
 )
 
+type PushManipulator interface {
+	MarkAsClicked(id uuid.UUID) error
+	ProcessFeedItem(ctx context.Context, item Item) error
+}
+
 type closable interface {
 	Close() error
 }
 
 type Consumer struct {
 	conn      *nats.Conn
-	service   *Service
+	service   PushManipulator
 	consumers []closable
 }
 
@@ -57,59 +63,6 @@ func (c *Consumer) clickHandler() pevents.PushClickHandler {
 	}
 }
 
-// todo: add rate limiter
-func (c *Consumer) handler() pevents.PushHandler {
-	return func(payload pevents.PushPayload) error {
-		var err error
-		defer func(start time.Time) {
-			metricHandleHistogram.
-				WithLabelValues("push", metrics.ErrLabelValue(err)).
-				Observe(time.Since(start).Seconds())
-		}(time.Now())
-
-		token, err := c.service.GetToken(context.TODO(), payload.UserID)
-		if err != nil {
-			log.Warn().Err(err).Msgf("get token for user %s", payload.UserID.String())
-			return nil
-		}
-
-		if payload.Version == pevents.PushVersionV2 {
-			err = c.service.SendCustom(context.TODO(), request{
-				token:    token,
-				body:     payload.Body,
-				title:    payload.Title,
-				imageURL: payload.ImageURL,
-				userID:   payload.UserID,
-				payload:  payload.CustomPayload,
-			})
-			if err != nil {
-				log.Error().
-					Err(err).
-					Str("user_id", payload.UserID.String()).
-					Msg("send custom push")
-			}
-
-			return nil
-		}
-
-		err = c.service.Send(context.TODO(), request{
-			token:    token,
-			body:     payload.Body,
-			title:    payload.Title,
-			imageURL: payload.ImageURL,
-			userID:   payload.UserID,
-		})
-		if err != nil {
-			log.Error().Str("user_id", payload.UserID.String()).Err(err).Msg("send push")
-			return err
-		}
-
-		log.Debug().Msgf("push was processed: %s", payload.UserID)
-
-		return nil
-	}
-}
-
 func (c *Consumer) Start(ctx context.Context) error {
 	group := config.GenerateGroupName("send_push")
 	opts := []client.ConsumerOpt{
@@ -118,10 +71,6 @@ func (c *Consumer) Start(ctx context.Context) error {
 		client.WithAckWait(executionTtl),
 	}
 
-	created, err := client.NewConsumer(ctx, c.conn, group, pevents.SubjectPushCreated, c.handler(), opts...)
-	if err != nil {
-		return fmt.Errorf("consume for %s/%s: %w", group, pevents.SubjectPushCreated, err)
-	}
 	clicked, err := client.NewConsumer(ctx, c.conn, group, pevents.SubjectPushClicked, c.clickHandler(), opts...)
 	if err != nil {
 		return fmt.Errorf("consume for %s/%s: %w", group, pevents.SubjectPushClicked, err)
@@ -131,7 +80,7 @@ func (c *Consumer) Start(ctx context.Context) error {
 		return fmt.Errorf("consume for %s/%s: %w", group, pevents.SubjectFeedUpdated, err)
 	}
 
-	c.consumers = append(c.consumers, created, clicked, feed)
+	c.consumers = append(c.consumers, clicked, feed)
 
 	log.Info().Msg("sender consumers is started")
 

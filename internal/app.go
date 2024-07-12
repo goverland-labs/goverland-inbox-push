@@ -106,7 +106,7 @@ func (a *Application) initServices() error {
 		return err
 	}
 
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		a.cfg.InternalAPI.InboxStorageAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -114,14 +114,13 @@ func (a *Application) initServices() error {
 		return fmt.Errorf("create connection with core storage server: %v", err)
 	}
 
-	client := inboxapi.NewSettingsClient(conn)
 	subs := inboxapi.NewSubscriptionClient(conn)
 	usrs := inboxapi.NewUserClient(conn)
 	sp := inboxapi.NewSettingsClient(conn)
 	coreSDK := coresdk.NewClient(a.cfg.Core.CoreURL)
 
 	repo := sender.NewRepo(a.db)
-	service, err := sender.NewService(repo, a.cfg.Push, client, subs, usrs, sp, coreSDK)
+	service, err := sender.NewService(repo, a.cfg.Push, subs, usrs, sp, coreSDK)
 	if err != nil {
 		return err
 	}
