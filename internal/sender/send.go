@@ -3,6 +3,7 @@ package sender
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,8 +12,6 @@ import (
 	"github.com/goverland-labs/core-web-sdk/proposal"
 	"github.com/goverland-labs/inbox-api/protobuf/inboxapi"
 	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (s *Service) sendBatch(ctx context.Context) error {
@@ -82,9 +81,9 @@ func (s *Service) sendBatch(ctx context.Context) error {
 			continue
 		}
 
-		req, err := s.prepareReq(ctx, userID, supported)
+		req, err := s.prepareBatchReq(ctx, userID, supported)
 		if err != nil {
-			return fmt.Errorf("s.prepareReq: %w", err)
+			return fmt.Errorf("s.prepareBatchReq: %w", err)
 		}
 		if err := s.Send(ctx, req); err != nil {
 			return fmt.Errorf("s.Send: %w", err)
@@ -100,7 +99,7 @@ func (s *Service) sendBatch(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) prepareReq(ctx context.Context, userID uuid.UUID, details []SendQueue) (request, error) {
+func (s *Service) prepareBatchReq(ctx context.Context, userID uuid.UUID, details []SendQueue) (request, error) {
 	if len(details) == 0 {
 		return request{}, fmt.Errorf("empty details")
 	}
@@ -205,66 +204,154 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 		}
 	}(sent)
 
+	// group by user_id
+	batches := make(map[uuid.UUID][]SendQueue)
 	for _, item := range list {
-		usr, err := s.usrs.GetUserProfile(ctx, &inboxapi.GetUserProfileRequest{UserId: item.UserID.String()})
-		if status.Code(err) == codes.NotFound {
-			// todo: think about adding another field/status for skipped messages
-			sent = append(sent, item.ID)
-			continue
-		}
+		byUser := batches[item.UserID]
+		byUser = append(byUser, item)
+		batches[item.UserID] = byUser
+	}
 
+	// prepareVotingEndsSoonReq
+	for userID, details := range batches {
+		req, err := s.prepareVotingEndsSoonReq(ctx, userID, details)
 		if err != nil {
-			return fmt.Errorf("s.usrs.GetUserProfile: %w", err)
+			return fmt.Errorf("s.prepareVotingEndsSoonReq: %s: %w", userID, err)
 		}
 
-		// user do not have an address
-		if usr.GetUser().GetAddress() == "" {
-			sent = append(sent, item.ID)
-			continue
-		}
-
-		res, err := s.core.GetUserVotes(ctx, usr.GetUser().GetAddress(), goverlandcorewebsdk.GetUserVotesRequest{
-			ProposalIDs: []string{item.ProposalID},
-			Limit:       1,
-		})
-		if err != nil {
-			return fmt.Errorf("s.core.UserVoted: %w", err)
-		}
-
-		// user has voted
-		if len(res.Items) != 0 {
-			sent = append(sent, item.ID)
-			continue
-		}
-
-		dd, err := s.getDao(ctx, item.DaoID)
-		if err != nil {
-			return fmt.Errorf("s.getDao: %w", err)
-		}
-
-		pr, err := s.getProposal(ctx, item.ProposalID)
-		if err != nil {
-			return fmt.Errorf("s.getProposal: %w", err)
-		}
-
-		err = s.Send(ctx, request{
-			title:     fmt.Sprintf("%s: Vote finishes soon", dd.Name),
-			body:      pr.Title,
-			imageURL:  generateDaoIcon(dd.Alias),
-			userID:    item.UserID,
-			proposals: []string{item.ProposalID},
-			template:  templateIDVoteFinishesSoon,
-		})
+		err = s.Send(ctx, req)
 		if err != nil {
 			return fmt.Errorf("s.Send: %w", err)
 		}
 
 		collectStats("send", "voting_ends_soon", err)
 
-		sent = append(sent, item.ID)
+		for _, info := range details {
+			sent = append(sent, info.ID)
+		}
 	}
 
 	return nil
+}
+
+func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID, details []SendQueue) (request, error) {
+	if len(details) == 0 {
+		return request{}, fmt.Errorf("empty details")
+	}
+
+	filtered, err := s.getNotVotedDetails(ctx, userID, details)
+	if err != nil {
+		return request{}, fmt.Errorf("s.getNotVotedDetails: %w", err)
+	}
+
+	req := request{
+		userID:   userID,
+		template: templateIDVoteFinishesSoon,
+	}
+
+	daoByID := map[uuid.UUID]struct{}{}
+	daos := make([]uuid.UUID, 0)
+	proposals := make([]string, 0, len(filtered))
+	for _, info := range filtered {
+		if _, ok := daoByID[info.DaoID]; !ok {
+			daoByID[info.DaoID] = struct{}{}
+			daos = append(daos, info.DaoID)
+		}
+
+		proposals = append(proposals, info.ProposalID)
+		req.proposals = append(req.proposals, info.ProposalID)
+	}
+
+	if len(daos) >= 2 {
+		req.title = "Votes finish soon"
+
+		names := make([]string, 0, len(daos))
+		for _, daoID := range daos {
+			dd, err := s.getDao(ctx, daoID)
+			if err != nil {
+				return req, fmt.Errorf("s.getDao: %w", err)
+			}
+
+			names = append(names, dd.Name)
+		}
+
+		req.body = fmt.Sprintf("%d active proposals in %s will finish soon.", len(req.proposals), prepareVotingEndsSoonNames(names))
+
+		return req, nil
+	}
+
+	dd, err := s.getDao(ctx, daos[0])
+	if err != nil {
+		return req, fmt.Errorf("s.getDao: %w", err)
+	}
+	req.imageURL = generateDaoIcon(dd.Alias)
+	req.title = fmt.Sprintf("%s: Votes finish soon", dd.Name)
+
+	if len(proposals) > 1 {
+		req.body = fmt.Sprintf("%d active proposals in %s will finish soon.", len(req.proposals), dd.Name)
+
+		return req, nil
+	}
+
+	pr, err := s.getProposal(ctx, proposals[0])
+	if err != nil {
+		return req, fmt.Errorf("s.getProposal: %w", err)
+	}
+	req.body = pr.Title
+
+	return req, nil
+}
+
+func prepareVotingEndsSoonNames(names []string) string {
+	switch len(names) {
+	case 0:
+		return ""
+	case 1:
+		return names[0]
+	case 2:
+		return fmt.Sprintf("%s and %s", names[0], names[1])
+	default:
+		return fmt.Sprintf("%s, %s and %s", names[0], names[1], names[2])
+	}
+}
+
+func (s *Service) getNotVotedDetails(ctx context.Context, userID uuid.UUID, details []SendQueue) ([]SendQueue, error) {
+	usr, err := s.usrs.GetUserProfile(ctx, &inboxapi.GetUserProfileRequest{UserId: userID.String()})
+	if err != nil {
+		return nil, fmt.Errorf("s.usrs.GetUserProfile: %w", err)
+	}
+
+	skippedIDs := make([]string, 0, len(details))
+	if usr.GetUser().GetAddress() != "" {
+		list := make([]string, 0, len(details))
+		for _, item := range details {
+			list = append(list, item.ProposalID)
+		}
+
+		res, err := s.core.GetUserVotes(ctx, usr.GetUser().GetAddress(), goverlandcorewebsdk.GetUserVotesRequest{
+			ProposalIDs: list,
+			Limit:       len(list),
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("s.core.GetUserVotes: %w", err)
+		}
+
+		for _, pr := range res.Items {
+			skippedIDs = append(skippedIDs, pr.ProposalID)
+		}
+	}
+
+	response := make([]SendQueue, 0, len(details))
+	for _, info := range details {
+		if slices.Contains(skippedIDs, info.ProposalID) {
+			continue
+		}
+
+		response = append(response, info)
+	}
+
+	return response, nil
 }
 
 func (s *Service) getAllowedSendActions(userID uuid.UUID) (Actions, error) {

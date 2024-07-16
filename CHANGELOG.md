@@ -8,6 +8,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Batch sending for voting ends soon events
+
+### Added
 - Basic unit tests
 
 ### Changed

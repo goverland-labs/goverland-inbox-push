@@ -9,7 +9,7 @@ import (
 
 const (
 	reSendDelay            = 5 * time.Minute
-	reSendImmediatelyDelay = 15 * time.Second
+	reSendImmediatelyDelay = 5 * time.Minute
 )
 
 type PostmanWorker struct {
