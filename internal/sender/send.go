@@ -12,6 +12,8 @@ import (
 	"github.com/goverland-labs/core-web-sdk/proposal"
 	"github.com/goverland-labs/inbox-api/protobuf/inboxapi"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *Service) sendBatch(ctx context.Context) error {
@@ -317,6 +319,10 @@ func prepareVotingEndsSoonNames(names []string) string {
 
 func (s *Service) getNotVotedDetails(ctx context.Context, userID uuid.UUID, details []SendQueue) ([]SendQueue, error) {
 	usr, err := s.usrs.GetUserProfile(ctx, &inboxapi.GetUserProfileRequest{UserId: userID.String()})
+	if status.Code(err) == codes.NotFound {
+		return nil, nil
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("s.usrs.GetUserProfile: %w", err)
 	}
