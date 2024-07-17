@@ -220,13 +220,14 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("s.prepareVotingEndsSoonReq: %s: %w", userID, err)
 		}
+		if req != nil {
+			err = s.Send(ctx, *req)
+			if err != nil {
+				return fmt.Errorf("s.Send: %w", err)
+			}
 
-		err = s.Send(ctx, req)
-		if err != nil {
-			return fmt.Errorf("s.Send: %w", err)
+			collectStats("send", "voting_ends_soon", err)
 		}
-
-		collectStats("send", "voting_ends_soon", err)
 
 		for _, info := range details {
 			sent = append(sent, info.ID)
@@ -236,14 +237,17 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID, details []SendQueue) (request, error) {
+func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID, details []SendQueue) (*request, error) {
 	if len(details) == 0 {
-		return request{}, fmt.Errorf("empty details")
+		return nil, fmt.Errorf("empty details")
 	}
 
 	filtered, err := s.getNotVotedDetails(ctx, userID, details)
 	if err != nil {
-		return request{}, fmt.Errorf("s.getNotVotedDetails: %w", err)
+		return nil, fmt.Errorf("s.getNotVotedDetails: %w", err)
+	}
+	if len(filtered) == 0 {
+		return nil, nil
 	}
 
 	req := request{
@@ -271,7 +275,7 @@ func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID
 		for _, daoID := range daos {
 			dd, err := s.getDao(ctx, daoID)
 			if err != nil {
-				return req, fmt.Errorf("s.getDao: %w", err)
+				return nil, fmt.Errorf("s.getDao: %w", err)
 			}
 
 			names = append(names, dd.Name)
@@ -279,12 +283,12 @@ func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID
 
 		req.body = fmt.Sprintf("%d active proposals in %s will finish soon.", len(req.proposals), prepareVotingEndsSoonNames(names))
 
-		return req, nil
+		return &req, nil
 	}
 
 	dd, err := s.getDao(ctx, daos[0])
 	if err != nil {
-		return req, fmt.Errorf("s.getDao: %w", err)
+		return nil, fmt.Errorf("s.getDao: %w", err)
 	}
 	req.imageURL = generateDaoIcon(dd.Alias)
 	req.title = fmt.Sprintf("%s: Votes finish soon", dd.Name)
@@ -292,16 +296,16 @@ func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID
 	if len(proposals) > 1 {
 		req.body = fmt.Sprintf("%d active proposals in %s will finish soon.", len(req.proposals), dd.Name)
 
-		return req, nil
+		return &req, nil
 	}
 
 	pr, err := s.getProposal(ctx, proposals[0])
 	if err != nil {
-		return req, fmt.Errorf("s.getProposal: %w", err)
+		return nil, fmt.Errorf("s.getProposal: %w", err)
 	}
 	req.body = pr.Title
 
-	return req, nil
+	return &req, nil
 }
 
 func prepareVotingEndsSoonNames(names []string) string {
