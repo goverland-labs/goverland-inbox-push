@@ -33,6 +33,10 @@ type UsersFinder interface {
 	AllowSendingPush(ctx context.Context, req *inboxapi.AllowSendingPushRequest, opts ...grpc.CallOption) (*inboxapi.AllowSendingPushResponse, error)
 }
 
+type SettingsProvider interface {
+	GetPushDetails(ctx context.Context, in *inboxapi.GetPushDetailsRequest, opts ...grpc.CallOption) (*inboxapi.GetPushDetailsResponse, error)
+}
+
 type cacheItem struct {
 	expireAt time.Time
 	data     any
@@ -42,6 +46,7 @@ type Service struct {
 	repo          *Repo
 	subscriptions SubscriptionsFinder
 	usrs          UsersFinder
+	settings      SettingsProvider
 	client        inboxapi.SettingsClient
 	core          *coresdk.Client
 
@@ -58,6 +63,7 @@ func NewService(
 	client inboxapi.SettingsClient,
 	subs SubscriptionsFinder,
 	usrs UsersFinder,
+	sp SettingsProvider,
 	coreSDK *coresdk.Client,
 ) (*Service, error) {
 	data, err := json.Marshal(cfg)
@@ -69,6 +75,7 @@ func NewService(
 		repo:          r,
 		subscriptions: subs,
 		usrs:          usrs,
+		settings:      sp,
 		client:        client,
 		cfg:           data,
 		projectID:     cfg.ProjectID,

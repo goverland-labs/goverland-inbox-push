@@ -1,6 +1,8 @@
 package sender
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -36,5 +38,27 @@ func ActionNotIn(in ...string) Filter {
 
 	return func(query *gorm.DB) *gorm.DB {
 		return query.Where("action not in ?", in)
+	}
+}
+
+func UserIDIn(in ...string) Filter {
+	var (
+		dummy SendQueue
+		_     = dummy.UserID
+	)
+
+	return func(query *gorm.DB) *gorm.DB {
+		return query.Where("user_id in ?", in)
+	}
+}
+
+func CreatedAfter(after time.Time) Filter {
+	var (
+		dummy SendQueue
+		_     = dummy.UserID
+	)
+
+	return func(query *gorm.DB) *gorm.DB {
+		return query.Where("created_at >= ?", after)
 	}
 }

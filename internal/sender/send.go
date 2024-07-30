@@ -37,23 +37,52 @@ func (s *Service) sendBatch(ctx context.Context) error {
 	}
 
 	sent := make([]uint, 0, len(list))
-	defer func(ids []uint) {
+	defer func() {
+		log.Info().Msgf("marking as sent ids: %v", sent)
+
 		if err := s.repo.MarkAsSent(context.TODO(), sent); err != nil {
 			log.Error().Err(err).Msg("mark as sent")
 		}
-	}(sent)
+	}()
 
 	for userID, details := range batches {
-		// let's check if we can send a push
+		//let's check if we can send a push
 		res, err := s.usrs.AllowSendingPush(ctx, &inboxapi.AllowSendingPushRequest{UserId: userID.String()})
 		if err != nil {
 			return fmt.Errorf("s.usrs.AllowSendingPush: %w", err)
 		}
 		if !res.Allow {
+			log.Info().Msgf("user is not allow to recieve push: %s", userID.String())
+
 			continue
 		}
 
-		req, err := s.prepareReq(ctx, userID, details)
+		allowedActions, err := s.getAllowedSendActions(userID)
+		if err != nil {
+			return fmt.Errorf("s.getAllowedSendActions: %w", err)
+		}
+
+		log.Info().Msgf("user %s allowed actions: %v", userID.String(), allowedActions)
+
+		// filter only supported actions by user cfg
+		supported := make([]SendQueue, 0, len(details))
+		for _, info := range details {
+			if !allowedActions.Contains(info.Action) {
+				sent = append(sent, info.ID)
+				continue
+			}
+
+			supported = append(supported, info)
+		}
+
+		log.Info().Msgf("user %s supported to recieve: %v", userID.String(), supported)
+
+		// if no supported, do not send anything
+		if len(supported) == 0 {
+			continue
+		}
+
+		req, err := s.prepareReq(ctx, userID, supported)
 		if err != nil {
 			return fmt.Errorf("s.prepareReq: %w", err)
 		}
@@ -236,6 +265,37 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Service) getAllowedSendActions(userID uuid.UUID) (Actions, error) {
+	result := make(Actions, 0, 10)
+	details, err := s.settings.GetPushDetails(context.Background(), &inboxapi.GetPushDetailsRequest{UserId: userID.String()})
+	if err != nil {
+		return nil, fmt.Errorf("s.settings.GetPushDetails: %w", err)
+	}
+
+	daoSettings := details.GetDao()
+	if daoSettings == nil {
+		return result, nil
+	}
+
+	if daoSettings.GetVoteFinished() {
+		result = append(result, ProposalVotingEnded)
+	}
+
+	if daoSettings.GetVoteFinishesSoon() {
+		result = append(result, ProposalVotingEndsSoon)
+	}
+
+	if daoSettings.GetQuorumReached() {
+		result = append(result, ProposalVotingQuorumReached)
+	}
+
+	if daoSettings.GetNewProposalCreated() {
+		result = append(result, ProposalCreated)
+	}
+
+	return result, nil
 }
 
 // todo: refactor it

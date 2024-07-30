@@ -2,6 +2,7 @@ package sender
 
 import (
 	"encoding/json"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,6 +32,12 @@ const (
 type Type string
 
 type Action string
+
+type Actions []Action
+
+func (l Actions) Contains(action Action) bool {
+	return slices.Contains(l, action)
+}
 
 type templateID int
 
