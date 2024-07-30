@@ -93,8 +93,8 @@ github.com/goverland-labs/core-web-sdk v0.0.20 h1:724ydp17pPcDQWP04DdKrXLqaZDR8W
 github.com/goverland-labs/core-web-sdk v0.0.20/go.mod h1:jNuOLZqwm/VOLF1ghOXKHs6B7DiXRCbGXH1ksaTLAgM=
 github.com/goverland-labs/goverland-platform-events v0.2.1 h1:gqy5VTMxPkd46ct1NBuRAP9lOWsRMG5q3oAtK5i8Xaw=
 github.com/goverland-labs/goverland-platform-events v0.2.1/go.mod h1:0/131HTR3cue1cDBVIoJ/iwgA+8f5MDQC8mUiqnouzE=
-github.com/goverland-labs/inbox-api v0.0.27-0.20240618152021-7a8f93864c1c h1:96lolF+CMEJwQSPJF+y5R/S8lJTuIVA4uRQnYS5l1fs=
-github.com/goverland-labs/inbox-api v0.0.27-0.20240618152021-7a8f93864c1c/go.mod h1:gFnTNa5515hTrrGZCQltCHlaaQdShCgL7giy2e+HIRo=
+github.com/goverland-labs/inbox-api v0.0.28 h1:21SO1LeJ8hVCL8uDD3RqUbn0VezhPj26YAVnedm8iRo=
+github.com/goverland-labs/inbox-api v0.0.28/go.mod h1:gFnTNa5515hTrrGZCQltCHlaaQdShCgL7giy2e+HIRo=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a h1:bbPeKD0xmW/Y25WS6cokEszi5g+S0QxI/d45PkRi7Nk=
