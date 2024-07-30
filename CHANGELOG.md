@@ -10,12 +10,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - Batch sending for voting ends soon events
 
-### Added
-- Basic unit tests
-
-### Changed
-- Use push settings details to avoid sending irrelevant notifications
-
 ## [0.1.1] - 2024-07-30
 
 ### Added
