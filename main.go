@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/caarlos0/env/v6"
+	_ "github.com/golang/mock/mockgen/model"
 	"github.com/rs/zerolog"
 	"github.com/s-larionov/process-manager"
 	"github.com/shopspring/decimal"

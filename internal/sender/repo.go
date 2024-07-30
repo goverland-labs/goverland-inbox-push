@@ -40,23 +40,6 @@ func (r *Repo) GetByHash(hash string) (*History, error) {
 	return &h, nil
 }
 
-func (r *Repo) GetLastSent(userID uuid.UUID) (*History, error) {
-	var h History
-	err := r.conn.
-		Model(&History{}).
-		Where(&History{
-			UserID: userID,
-		}).
-		Last(&h).
-		Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &h, nil
-}
-
 func (r *Repo) MarkAsClicked(messageUUID uuid.UUID) error {
 	var (
 		h History
