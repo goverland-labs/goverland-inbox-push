@@ -208,7 +208,7 @@ func (s *Service) Send(ctx context.Context, req request) error {
 				Err(err).
 				Msg("send push by external client")
 
-			return nil
+			return fmt.Errorf("send push by external client: %w", err)
 		}
 
 		payload, _ := json.Marshal(req.proposals)
