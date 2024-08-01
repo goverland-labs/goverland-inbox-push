@@ -11,6 +11,7 @@ import (
 	"time"
 
 	firebase "firebase.google.com/go/v4"
+	firebaseerrs "firebase.google.com/go/v4/errorutils"
 	"firebase.google.com/go/v4/messaging"
 	"github.com/google/uuid"
 	coresdk "github.com/goverland-labs/core-web-sdk"
@@ -195,12 +196,19 @@ func (s *Service) Send(ctx context.Context, req request) error {
 				},
 			},
 		})
-		if err != nil {
+		if err != nil && firebaseerrs.IsNotFound(err) {
+			log.Warn().
+				Msgf("token not found for push token %s", req.userID.String())
+
+			continue
+		}
+
+		if err != nil && !firebaseerrs.IsInternal(err) {
 			log.Error().
 				Err(err).
 				Msg("send push by external client")
 
-			return nil
+			return fmt.Errorf("send push by external client: %w", err)
 		}
 
 		payload, _ := json.Marshal(req.proposals)
