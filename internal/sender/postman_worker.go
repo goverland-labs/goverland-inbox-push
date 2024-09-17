@@ -40,9 +40,24 @@ func (w *PostmanWorker) StartRegular(ctx context.Context) error {
 	}
 }
 
-func (w *PostmanWorker) StartImmediately(ctx context.Context) error {
+func (w *PostmanWorker) StartVotingEndsSoon(ctx context.Context) error {
 	for {
 		err := w.service.sendVotingEndsSoon(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("send immediately")
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(reSendImmediatelyDelay):
+		}
+	}
+}
+
+func (w *PostmanWorker) StartDelegates(ctx context.Context) error {
+	for {
+		err := w.service.sendDelegates(ctx)
 		if err != nil {
 			log.Error().Err(err).Msg("send immediately")
 		}

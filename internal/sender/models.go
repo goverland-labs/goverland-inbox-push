@@ -19,14 +19,20 @@ const (
 	ProposalVotingStarted       Action = "proposal.voting.started"
 	ProposalVotingQuorumReached Action = "proposal.voting.quorum_reached"
 	ProposalVotingEnded         Action = "proposal.voting.ended"
+	DelegateCreateProposal      Action = "delegate.proposal.created"
+	DelegateVotingVoted         Action = "delegate.voting.voted"
+	DelegateVotingSkipVote      Action = "delegate.voting.skip_vote"
 )
 
 const (
-	templateIDVoteFinishesSoon  templateID = 1
-	templateIDOneDaoOneProposal templateID = 2
-	templateIDOneDaoFewProposal templateID = 3
-	templateIDTwoDao            templateID = 4
-	templateIDFewDao            templateID = 5
+	templateIDVoteFinishesSoon       templateID = 1
+	templateIDOneDaoOneProposal      templateID = 2
+	templateIDOneDaoFewProposal      templateID = 3
+	templateIDTwoDao                 templateID = 4
+	templateIDFewDao                 templateID = 5
+	templateIDDelegateCreateProposal templateID = 6
+	templateIDDelegateVotingVoted    templateID = 7
+	templateIDDelegateVotingSkipVote templateID = 8
 )
 
 type Type string
@@ -90,7 +96,10 @@ func (i Item) AllowSending() bool {
 	case ProposalCreated,
 		ProposalVotingQuorumReached,
 		ProposalVotingEndsSoon,
-		ProposalVotingEnded:
+		ProposalVotingEnded,
+		DelegateCreateProposal,
+		DelegateVotingVoted,
+		DelegateVotingSkipVote:
 		return true
 	}
 
