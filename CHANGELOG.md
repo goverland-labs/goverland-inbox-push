@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Sending pushes by delegates events
+
 ## [0.3.0] - 2024-11-01
 
 ### Added
