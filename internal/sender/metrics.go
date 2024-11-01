@@ -4,7 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/goverland-labs/inbox-push/internal/metrics"
+	"github.com/goverland-labs/goverland-inbox-push/internal/metrics"
 )
 
 var metricHandleHistogram = promauto.NewHistogramVec(

@@ -7,9 +7,9 @@ import (
 	"github.com/s-larionov/process-manager"
 	"github.com/shopspring/decimal"
 
-	"github.com/goverland-labs/inbox-push/internal"
-	"github.com/goverland-labs/inbox-push/internal/config"
-	"github.com/goverland-labs/inbox-push/internal/logger"
+	"github.com/goverland-labs/goverland-inbox-push/internal"
+	"github.com/goverland-labs/goverland-inbox-push/internal/config"
+	"github.com/goverland-labs/goverland-inbox-push/internal/logger"
 )
 
 const decimalDivisionPrecision = 32

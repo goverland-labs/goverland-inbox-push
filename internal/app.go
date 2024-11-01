@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	coresdk "github.com/goverland-labs/core-web-sdk"
-	"github.com/goverland-labs/inbox-api/protobuf/inboxapi"
+	coresdk "github.com/goverland-labs/goverland-core-sdk-go"
+	"github.com/goverland-labs/goverland-inbox-api-protocol/protobuf/inboxapi"
 	"github.com/nats-io/nats.go"
 	"github.com/s-larionov/process-manager"
 	"google.golang.org/grpc"
@@ -15,10 +15,10 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/goverland-labs/inbox-push/internal/config"
-	"github.com/goverland-labs/inbox-push/internal/sender"
-	"github.com/goverland-labs/inbox-push/pkg/health"
-	"github.com/goverland-labs/inbox-push/pkg/prometheus"
+	"github.com/goverland-labs/goverland-inbox-push/internal/config"
+	"github.com/goverland-labs/goverland-inbox-push/internal/sender"
+	"github.com/goverland-labs/goverland-inbox-push/pkg/health"
+	"github.com/goverland-labs/goverland-inbox-push/pkg/prometheus"
 )
 
 type Application struct {

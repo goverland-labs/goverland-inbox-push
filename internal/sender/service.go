@@ -14,16 +14,16 @@ import (
 	firebaseerrs "firebase.google.com/go/v4/errorutils"
 	"firebase.google.com/go/v4/messaging"
 	"github.com/google/uuid"
-	coresdk "github.com/goverland-labs/core-web-sdk"
-	"github.com/goverland-labs/core-web-sdk/dao"
-	"github.com/goverland-labs/core-web-sdk/proposal"
-	"github.com/goverland-labs/inbox-api/protobuf/inboxapi"
+	coresdk "github.com/goverland-labs/goverland-core-sdk-go"
+	"github.com/goverland-labs/goverland-core-sdk-go/dao"
+	"github.com/goverland-labs/goverland-core-sdk-go/proposal"
+	"github.com/goverland-labs/goverland-inbox-api-protocol/protobuf/inboxapi"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
-	"github.com/goverland-labs/inbox-push/internal/config"
+	"github.com/goverland-labs/goverland-inbox-push/internal/config"
 )
 
 type SubscriptionsFinder interface {
@@ -48,7 +48,7 @@ type MessageSender interface {
 
 type CoreDataProvider interface {
 	GetUserVotes(ctx context.Context, address string, params coresdk.GetUserVotesRequest) (*proposal.VoteList, error)
-	GetDao(ctx context.Context, id uuid.UUID) (*dao.Dao, error)
+	GetDao(ctx context.Context, id string) (*dao.Dao, error)
 	GetProposal(ctx context.Context, id string) (*proposal.Proposal, error)
 }
 

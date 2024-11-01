@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	goverlandcorewebsdk "github.com/goverland-labs/core-web-sdk"
-	"github.com/goverland-labs/core-web-sdk/dao"
-	"github.com/goverland-labs/core-web-sdk/proposal"
-	"github.com/goverland-labs/inbox-api/protobuf/inboxapi"
+	goverlandcorewebsdk "github.com/goverland-labs/goverland-core-sdk-go"
+	"github.com/goverland-labs/goverland-core-sdk-go/dao"
+	"github.com/goverland-labs/goverland-core-sdk-go/proposal"
+	"github.com/goverland-labs/goverland-inbox-api-protocol/protobuf/inboxapi"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -406,7 +406,7 @@ func (s *Service) getDao(ctx context.Context, id uuid.UUID) (*dao.Dao, error) {
 		return val.data.(*dao.Dao), nil
 	}
 
-	dao, err := s.core.GetDao(ctx, id)
+	dao, err := s.core.GetDao(ctx, id.String())
 	if err != nil {
 		return nil, fmt.Errorf("s.core.GetDao: %s: %w", id, err)
 	}
