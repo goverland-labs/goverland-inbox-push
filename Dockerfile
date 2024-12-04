@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine3.17 AS builder
+FROM golang:1.23-alpine3.20 AS builder
 
 ARG GITHUB_TOKEN=""
 

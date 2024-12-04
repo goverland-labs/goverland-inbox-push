@@ -105,4 +105,7 @@ var payloadActionMap = map[inbox.TimelineAction]Action{
 	inbox.ProposalVotingStarted:       ProposalVotingStarted,
 	inbox.ProposalVotingQuorumReached: ProposalVotingQuorumReached,
 	inbox.ProposalVotingEnded:         ProposalVotingEnded,
+	inbox.DelegateCreateProposal:      DelegateCreateProposal,
+	inbox.DelegateVotingVoted:         DelegateVotingVoted,
+	inbox.DelegateVotingSkipVote:      DelegateVotingSkipVote,
 }

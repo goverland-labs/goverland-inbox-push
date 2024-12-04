@@ -20,7 +20,12 @@ func (s *Service) sendBatch(ctx context.Context) error {
 	// get list from queue
 	list, err := s.repo.QueueByFilters(ctx, []Filter{
 		AvailableForSending(),
-		ActionNotIn(string(ProposalVotingEndsSoon)),
+		ActionNotIn(
+			string(ProposalVotingEndsSoon),
+			string(DelegateCreateProposal),
+			string(DelegateVotingVoted),
+			string(DelegateVotingSkipVote),
+		),
 	})
 	if err != nil {
 		return fmt.Errorf("s.repo.GetInQueue: %w", err)
@@ -237,6 +242,49 @@ func (s *Service) sendVotingEndsSoon(ctx context.Context) error {
 	return nil
 }
 
+func (s *Service) sendDelegates(ctx context.Context) error {
+	list, err := s.repo.QueueByFilters(ctx, []Filter{
+		AvailableForSending(),
+		ActionIn(
+			string(DelegateCreateProposal),
+			string(DelegateVotingVoted),
+			string(DelegateVotingSkipVote),
+		),
+	})
+	if err != nil {
+		return fmt.Errorf("s.repo.GetInQueue: %w", err)
+	}
+
+	if len(list) == 0 {
+		return nil
+	}
+
+	sent := make([]uint, 0, len(list))
+	defer func(ids []uint) {
+		if err := s.repo.MarkAsSent(context.TODO(), sent); err != nil {
+			log.Error().Err(err).Msg("mark as sent")
+		}
+	}(sent)
+
+	for _, info := range list {
+		req, err := s.prepareDelegationPush(ctx, info)
+		if err != nil {
+			return fmt.Errorf("s.prepareDelegationPush: %d: %w", info.ID, err)
+		}
+
+		err = s.Send(ctx, req)
+		if err != nil {
+			return fmt.Errorf("s.Send: %w", err)
+		}
+
+		collectStats("send", string(info.Action), err)
+
+		sent = append(sent, info.ID)
+	}
+
+	return nil
+}
+
 func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID, details []SendQueue) (*request, error) {
 	if len(details) == 0 {
 		return nil, fmt.Errorf("empty details")
@@ -306,6 +354,41 @@ func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID
 	req.body = pr.Title
 
 	return &req, nil
+}
+
+func (s *Service) prepareDelegationPush(ctx context.Context, info SendQueue) (request, error) {
+	req := request{
+		userID:    info.UserID,
+		proposals: []string{info.ProposalID},
+	}
+
+	dd, err := s.getDao(ctx, info.DaoID)
+	if err != nil {
+		return request{}, fmt.Errorf("s.getDao: %w", err)
+	}
+
+	req.imageURL = generateDaoIcon(dd.Alias)
+
+	pr, err := s.getProposal(ctx, info.ProposalID)
+	if err != nil {
+		return request{}, fmt.Errorf("s.getProposal: %w", err)
+	}
+
+	req.title = dd.Name
+
+	switch info.Action {
+	case DelegateCreateProposal:
+		req.template = templateIDDelegateCreateProposal
+		req.body = fmt.Sprintf("Your delegate created a proposal: %s", pr.Title)
+	case DelegateVotingVoted:
+		req.template = templateIDDelegateVotingVoted
+		req.body = fmt.Sprintf("Your delegate voted on a proposal: %s", pr.Title)
+	case DelegateVotingSkipVote:
+		req.template = templateIDDelegateVotingSkipVote
+		req.body = fmt.Sprintf("Your delegate skipped the vote: %s", pr.Title)
+	}
+
+	return req, nil
 }
 
 func prepareVotingEndsSoonNames(names []string) string {

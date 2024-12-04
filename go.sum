@@ -86,12 +86,12 @@ github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 h1:EGx4pi6eqNxGa
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
 github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
-github.com/goverland-labs/goverland-core-sdk-go v0.1.14 h1:3JvzmWZo+ZrxWkvq07Mgdf7EA+U0rDOdAzhuBWzN9Jk=
-github.com/goverland-labs/goverland-core-sdk-go v0.1.14/go.mod h1:8OPh3hODfwLE4ckzY3DRJ4Shs6RXdUGB/KN8o+L6kT4=
+github.com/goverland-labs/goverland-core-sdk-go v0.2.0 h1:FobRvk5AiJmDb8CRJCEE8jSOiks6a7FpDuM/esWPvzs=
+github.com/goverland-labs/goverland-core-sdk-go v0.2.0/go.mod h1:8OPh3hODfwLE4ckzY3DRJ4Shs6RXdUGB/KN8o+L6kT4=
 github.com/goverland-labs/goverland-inbox-api-protocol v0.3.0 h1:mbHlGQJTFMOkdCw0ow+mHQ2KzACKQEshn8mgzLe3O1E=
 github.com/goverland-labs/goverland-inbox-api-protocol v0.3.0/go.mod h1:Ez31DBNpfRGyIXtrkEfB9C6PIBGID7nQlIHV380abEU=
-github.com/goverland-labs/goverland-platform-events v0.2.1 h1:gqy5VTMxPkd46ct1NBuRAP9lOWsRMG5q3oAtK5i8Xaw=
-github.com/goverland-labs/goverland-platform-events v0.2.1/go.mod h1:0/131HTR3cue1cDBVIoJ/iwgA+8f5MDQC8mUiqnouzE=
+github.com/goverland-labs/goverland-platform-events v0.3.7 h1:CZJ1TGwayrc2cx05TOWLuvqmCtYul5MRNJUzf16cPuQ=
+github.com/goverland-labs/goverland-platform-events v0.3.7/go.mod h1:0/131HTR3cue1cDBVIoJ/iwgA+8f5MDQC8mUiqnouzE=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a h1:bbPeKD0xmW/Y25WS6cokEszi5g+S0QxI/d45PkRi7Nk=

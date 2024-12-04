@@ -146,7 +146,7 @@ func TestRequestHashGeneration(t *testing.T) {
 		template:   1,
 	}
 
-	expected := "45bab8b270d392cb834cc6bcdc230350"
+	expected := "14e3642c4703478f89c1380ae92b2a3f"
 
 	t.Run("hash generation", func(t *testing.T) {
 		actual := req.hash()
