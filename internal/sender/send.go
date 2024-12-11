@@ -272,12 +272,14 @@ func (s *Service) sendDelegates(ctx context.Context) error {
 			return fmt.Errorf("s.prepareDelegationPush: %d: %w", info.ID, err)
 		}
 
-		err = s.Send(ctx, req)
-		if err != nil {
-			return fmt.Errorf("s.Send: %w", err)
-		}
+		if req != nil {
+			err = s.Send(ctx, *req)
+			if err != nil {
+				return fmt.Errorf("s.Send: %w", err)
+			}
 
-		collectStats("send", string(info.Action), err)
+			collectStats("send", string(info.Action), err)
+		}
 
 		sent = append(sent, info.ID)
 	}
@@ -356,25 +358,32 @@ func (s *Service) prepareVotingEndsSoonReq(ctx context.Context, userID uuid.UUID
 	return &req, nil
 }
 
-func (s *Service) prepareDelegationPush(ctx context.Context, info SendQueue) (request, error) {
-	req := request{
-		userID:    info.UserID,
-		proposals: []string{info.ProposalID},
+func (s *Service) prepareDelegationPush(ctx context.Context, info SendQueue) (*request, error) {
+	delegates, err := s.getUserDelegatesByDaoID(ctx, info.UserID, info.DaoID)
+	if err != nil {
+		return nil, fmt.Errorf("s.getUserDelegatesByDaoID: %w", err)
+	}
+
+	pr, err := s.getProposal(ctx, info.ProposalID)
+	if err != nil {
+		return nil, fmt.Errorf("s.getProposal: %w", err)
+	}
+
+	if !slices.Contains(delegates, pr.Author) {
+		return nil, nil
 	}
 
 	dd, err := s.getDao(ctx, info.DaoID)
 	if err != nil {
-		return request{}, fmt.Errorf("s.getDao: %w", err)
+		return nil, fmt.Errorf("s.getDao: %w", err)
 	}
 
-	req.imageURL = generateDaoIcon(dd.Alias)
-
-	pr, err := s.getProposal(ctx, info.ProposalID)
-	if err != nil {
-		return request{}, fmt.Errorf("s.getProposal: %w", err)
+	req := request{
+		userID:    info.UserID,
+		proposals: []string{info.ProposalID},
+		imageURL:  generateDaoIcon(dd.Alias),
+		title:     dd.Name,
 	}
-
-	req.title = dd.Name
 
 	switch info.Action {
 	case DelegateCreateProposal:
@@ -388,7 +397,40 @@ func (s *Service) prepareDelegationPush(ctx context.Context, info SendQueue) (re
 		req.body = fmt.Sprintf("Your delegate skipped the vote: %s", pr.Title)
 	}
 
-	return req, nil
+	return &req, nil
+}
+
+func (s *Service) getUserDelegatesByDaoID(ctx context.Context, userID, daoID uuid.UUID) ([]string, error) {
+	usr, err := s.usrs.GetUserProfile(ctx, &inboxapi.GetUserProfileRequest{UserId: userID.String()})
+	if err != nil {
+		return nil, fmt.Errorf("s.usrs.GetUserProfile: %w", err)
+	}
+
+	limit, offset := 50, 0
+	delegates := make([]string, 0, limit)
+	for {
+		resp, err := s.core.GetDelegatesList(ctx, goverlandcorewebsdk.GetDelegatesListRequest{
+			Address: usr.GetUser().GetAddress(),
+			DaoID:   daoID.String(),
+			Offset:  offset,
+			Limit:   limit,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("s.core.GetDelegatesList: %w", err)
+		}
+
+		for _, info := range resp.List {
+			delegates = append(delegates, info.Address)
+		}
+
+		offset += limit
+		if resp.TotalCount <= offset {
+			break
+		}
+	}
+
+	return delegates, nil
 }
 
 func prepareVotingEndsSoonNames(names []string) string {

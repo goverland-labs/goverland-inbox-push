@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	coresdk "github.com/goverland-labs/goverland-core-sdk-go"
 	"github.com/goverland-labs/goverland-core-sdk-go/dao"
+	"github.com/goverland-labs/goverland-core-sdk-go/delegate"
 	"github.com/goverland-labs/goverland-core-sdk-go/proposal"
 	"github.com/goverland-labs/goverland-inbox-api-protocol/protobuf/inboxapi"
 	"github.com/rs/zerolog/log"
@@ -50,6 +51,7 @@ type CoreDataProvider interface {
 	GetUserVotes(ctx context.Context, address string, params coresdk.GetUserVotesRequest) (*proposal.VoteList, error)
 	GetDao(ctx context.Context, id string) (*dao.Dao, error)
 	GetProposal(ctx context.Context, id string) (*proposal.Proposal, error)
+	GetDelegatesList(ctx context.Context, params coresdk.GetDelegatesListRequest) (*delegate.DelegatesList, error)
 }
 
 type DataManipulator interface {
